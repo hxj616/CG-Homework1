@@ -17,6 +17,8 @@ Type your name and student ID here
 GLint programID;
 float x_delta = 0.1f;
 int x_press_num = 0;
+int y_press_num = 0;
+int z_press_num = 0;
 
 unsigned int VAO[21], VBO[21], EBO[21];
 
@@ -213,6 +215,49 @@ void sendDataToOpenGL() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (char*)(3 * sizeof(float)));
 
 	glBindVertexArray(0);
+
+	const GLfloat diamond[] = {
+		// 顶部顶点
+		0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // 0: 顶点（上）
+
+		// 中间4个顶点
+		-0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,  // 1: 前左
+		0.5f, 0.0f, 0.5f, 0.0f, 0.0f, 1.0f,  // 2: 前右
+		0.5f, 0.0f, -0.5f, 1.0f, 1.0f, 0.0f,  // 3: 后右
+		-0.5f, 0.0f, -0.5f, 1.0f, 0.0f, 1.0f,  // 4: 后左
+
+		// 底部顶点
+		0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f   // 5: 顶点（下）
+	};
+
+	GLuint diamondIndex[] = {
+		0, 1, 2,
+		0, 2, 3,
+		0, 3, 4, 
+		0, 4, 1, 
+		5, 1, 2,
+		5, 2, 3,
+		5, 3, 4,
+		5, 4, 1
+	};
+
+	glGenVertexArrays(1, &VAO[2]);
+	glGenBuffers(1, &VBO[2]);
+	glGenBuffers(1, &EBO[0]);
+
+	glBindVertexArray(VAO[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(diamond), diamond, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(diamondIndex), diamondIndex, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (char*)(3 * sizeof(float)));
+
+	glBindVertexArray(0);
 }
 
 void paintGL(void) {
@@ -256,6 +301,19 @@ void paintGL(void) {
 
 	glBindVertexArray(VAO[1]);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	// 3. 绘制钻石
+	modelTransformMatrix = glm::mat4(1.0f);
+	modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.5f, 0.0f)); // 位置
+	modelTransformMatrix = glm::scale(modelTransformMatrix,
+		glm::vec3(0.3f, 0.3f, 0.3f));
+	modelTransformMatrix = glm::rotate(modelTransformMatrix, (float)glfwGetTime(),
+		glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))); // 绕y轴
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+
+	glBindVertexArray(VAO[2]);
+	glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
