@@ -101,7 +101,7 @@ void installShaders() {
 
 	if (!checkProgramStatus(programID))
 		return;
-	
+
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragmentShaderID);
 
@@ -143,7 +143,7 @@ void sendDataToOpenGL() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (char*)(3 * sizeof(float)));
-	  // 该对象包含ebo(索引)
+	// 该对象包含ebo(索引)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index0), index0, GL_STATIC_DRAW);
 
@@ -206,9 +206,9 @@ void sendDataToOpenGL() {
 	glBindVertexArray(VAO[1]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cube0), cube0, GL_STATIC_DRAW);
-	
+
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (char*)(3 * sizeof(float)));
 
@@ -229,8 +229,10 @@ void paintGL(void) {
 	// 1. 绘制矩形
 	modelTransformMatrix = glm::translate(glm::mat4(1.0f),
 		glm::vec3(x_delta * x_press_num, 0.0f, 0.0f));
+	modelTransformMatrix = glm::scale(modelTransformMatrix,
+		glm::vec3(0.3f, 0.3f, 0.3f));
 	GLint modelLoc = glGetUniformLocation(programID, "modelTransformMatrix");
-	
+
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
 	glBindVertexArray(VAO[0]);
@@ -240,8 +242,16 @@ void paintGL(void) {
 	// 2. 绘制立方体
 	modelTransformMatrix = glm::translate(glm::mat4(1.0f),
 		glm::vec3(0.5f, 0.0f, 0.0f));
+	modelTransformMatrix = glm::scale(modelTransformMatrix,
+		glm::vec3(0.3f, 0.3f, 0.3f));
 	modelTransformMatrix = glm::rotate(modelTransformMatrix,
-		(float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	modelTransformMatrix = glm::rotate(modelTransformMatrix,
+		glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	modelTransformMatrix = glm::rotate(modelTransformMatrix,
+		glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	modelTransformMatrix = glm::rotate(modelTransformMatrix,
+		(float)glfwGetTime(), glm::vec3(1.0f, 1.0f, 1.0f));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
 	glBindVertexArray(VAO[1]);
