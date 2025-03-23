@@ -9,6 +9,7 @@ Type your name and student ID here
 
 #include "Dependencies/glm/glm.hpp"
 #include "Dependencies/glm/gtc/matrix_transform.hpp"
+#include "Dependencies/glm/gtc/type_ptr.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -25,7 +26,7 @@ const float rotationSpeed = glm::radians(50.0f);
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-unsigned int VAO[21], VBO[21], EBO[21];
+unsigned int VAO[10], VBO[10], EBO[10];
 
 void get_OpenGL_info() {
 	// OpenGL information
@@ -238,8 +239,8 @@ void sendDataToOpenGL() {
 	GLuint diamondIndex[] = {
 		0, 1, 2,
 		0, 2, 3,
-		0, 3, 4, 
-		0, 4, 1, 
+		0, 3, 4,
+		0, 4, 1,
 		5, 1, 2,
 		5, 2, 3,
 		5, 3, 4,
@@ -248,13 +249,13 @@ void sendDataToOpenGL() {
 
 	glGenVertexArrays(1, &VAO[2]);
 	glGenBuffers(1, &VBO[2]);
-	glGenBuffers(1, &EBO[0]);
+	glGenBuffers(1, &EBO[1]);
 
 	glBindVertexArray(VAO[2]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(diamond), diamond, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(diamondIndex), diamondIndex, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
@@ -282,7 +283,7 @@ void paintGL(void) {
 	modelTransformMatrix = glm::scale(modelTransformMatrix,
 		glm::vec3(0.3f, 0.3f, 0.3f));
 	modelTransformMatrix = glm::rotate(modelTransformMatrix,
-		rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+		rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 	GLint modelLoc = glGetUniformLocation(programID, "modelTransformMatrix");
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
@@ -312,11 +313,11 @@ void paintGL(void) {
 
 	// 3. 绘制钻石
 	modelTransformMatrix = glm::mat4(1.0f);
-	modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.5f, 0.0f)); // 位置
+	modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -0.5f, 0.0f)); // 位置
 	modelTransformMatrix = glm::scale(modelTransformMatrix,
 		glm::vec3(0.3f, 0.3f, 0.3f));
 	modelTransformMatrix = glm::rotate(modelTransformMatrix, (float)glfwGetTime(),
-		glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))); // 绕y轴
+		glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))); // 绕Y轴
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
 	glBindVertexArray(VAO[2]);
@@ -397,11 +398,25 @@ int main(int argc, char* argv[]) {
 	get_OpenGL_info();
 	initializedGL();
 
+	glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 50.0f);
+
+	glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 5.0f);  // 摄像机位置
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);  // 观察目标
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);  // 上方向
+	glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraTarget, up);
+
+	// 传递到着色器
+	GLuint projLoc = glGetUniformLocation(programID, "projectionMatrix");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+	GLuint viewLoc = glGetUniformLocation(programID, "viewMatrix");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
 		paintGL();
-		
+
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
