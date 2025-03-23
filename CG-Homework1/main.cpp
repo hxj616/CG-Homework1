@@ -25,6 +25,10 @@ float rotationAngle = 0.0f;
 const float rotationSpeed = glm::radians(50.0f);
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float cameraDistance = 5.0f;
+
+glm::mat4 projectionMatrix;
+glm::mat4 viewMatrix;
 
 unsigned int VAO[10], VBO[10], EBO[10];
 
@@ -344,6 +348,35 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 
 }
+void initCamera(void) {
+	projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 50.0f);
+
+	glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, cameraDistance);  // 摄像机位置
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);  // 观察目标
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);  // 上方向
+	viewMatrix = glm::lookAt(cameraPos, cameraTarget, up);
+
+	// 传递到着色器
+	GLuint projLoc = glGetUniformLocation(programID, "projectionMatrix");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	GLuint viewLoc = glGetUniformLocation(programID, "viewMatrix");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+}
+
+void updateCamera(void) {
+	glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, cameraDistance);  // 摄像机位置
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);  // 观察目标
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);  // 上方向
+	viewMatrix = glm::lookAt(cameraPos, cameraTarget, up);
+	// 传递到着色器
+	GLuint viewLoc = glGetUniformLocation(programID, "viewMatrix");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	cameraDistance -= yoffset * 0.2f;
+	cameraDistance = glm::clamp(cameraDistance, 2.0f, 20.0f);
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -398,24 +431,14 @@ int main(int argc, char* argv[]) {
 	get_OpenGL_info();
 	initializedGL();
 
-	glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 50.0f);
-
-	glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 5.0f);  // 摄像机位置
-	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);  // 观察目标
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);  // 上方向
-	glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraTarget, up);
-
-	// 传递到着色器
-	GLuint projLoc = glGetUniformLocation(programID, "projectionMatrix");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
-	GLuint viewLoc = glGetUniformLocation(programID, "viewMatrix");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	initCamera(); // 初始化摄像机
+	glfwSetScrollCallback(window, scroll_callback); // 绑定滚轮事件
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
 		paintGL();
+		updateCamera(); // 更新摄像机
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -427,6 +450,7 @@ int main(int argc, char* argv[]) {
 		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 			rotationAngle += rotationSpeed * deltaTime;
 		}
+
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 
