@@ -20,6 +20,10 @@ float y_delta = 0.1f;
 int x_press_num = 0;
 int y_press_num = 0;
 int z_press_num = 0;
+float rotationAngle = 0.0f;
+const float rotationSpeed = glm::radians(50.0f);
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 unsigned int VAO[21], VBO[21], EBO[21];
 
@@ -277,6 +281,8 @@ void paintGL(void) {
 		glm::vec3(x_delta * x_press_num, y_delta * y_press_num, 0.0f));
 	modelTransformMatrix = glm::scale(modelTransformMatrix,
 		glm::vec3(0.3f, 0.3f, 0.3f));
+	modelTransformMatrix = glm::rotate(modelTransformMatrix,
+		rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
 	GLint modelLoc = glGetUniformLocation(programID, "modelTransformMatrix");
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
@@ -395,7 +401,17 @@ int main(int argc, char* argv[]) {
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
 		paintGL();
+		
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+			rotationAngle -= rotationSpeed * deltaTime;
+		}
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+			rotationAngle += rotationSpeed * deltaTime;
+		}
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 
