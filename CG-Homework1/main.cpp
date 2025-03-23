@@ -16,6 +16,7 @@ Type your name and student ID here
 
 GLint programID;
 float x_delta = 0.1f;
+float y_delta = 0.1f;
 int x_press_num = 0;
 int y_press_num = 0;
 int z_press_num = 0;
@@ -273,7 +274,7 @@ void paintGL(void) {
 
 	// 1. »æÖÆ¾ØÐÎ
 	modelTransformMatrix = glm::translate(glm::mat4(1.0f),
-		glm::vec3(x_delta * x_press_num, 0.0f, 0.0f));
+		glm::vec3(x_delta * x_press_num, y_delta * y_press_num, 0.0f));
 	modelTransformMatrix = glm::scale(modelTransformMatrix,
 		glm::vec3(0.3f, 0.3f, 0.3f));
 	GLint modelLoc = glGetUniformLocation(programID, "modelTransformMatrix");
@@ -328,6 +329,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_D && action == GLFW_PRESS) {
 		x_press_num += 1;
 	}
+	if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+		y_press_num += 1;
+	}
+	if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+		y_press_num -= 1;
+	}
+
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
