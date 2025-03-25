@@ -14,6 +14,14 @@ Type your name and student ID here
 #include <iostream>
 #include <fstream>
 
+#include <vector>
+#include <cmath>
+
+// 创建球形
+std::vector<float> vertices;
+std::vector<unsigned int> indices;
+int stacks = 32, slices = 32;
+float radius = 1.0f;
 
 GLint programID;
 float x_delta = 0.1f;
@@ -123,6 +131,7 @@ void installShaders() {
 void sendDataToOpenGL() {
 	// TODO:
 	// create 2D objects and 3D objects and/or lines (points) here and bind to VAOs & VBOs
+	// 1. 矩形
 	const GLfloat square0[] = {
 		-0.5f, -0.5f, +0.0f,  // left
 		+0.0f, +1.0f, +0.0f,  // color
@@ -161,6 +170,7 @@ void sendDataToOpenGL() {
 
 	glBindVertexArray(0);
 
+	// 2. 正方体
 	const GLfloat cube0[] = {
 		// 前面
 		-0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  // 左下
@@ -226,6 +236,7 @@ void sendDataToOpenGL() {
 
 	glBindVertexArray(0);
 
+	// 3. 钻石
 	const GLfloat diamond[] = {
 		// 顶部顶点
 		0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // 0: 顶点（上）
@@ -266,6 +277,66 @@ void sendDataToOpenGL() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (char*)(3 * sizeof(float)));
+
+	glBindVertexArray(0);
+
+	// 4. 球体
+	for (int i = 0; i <= stacks; ++i) {
+		float phi = glm::pi<float>() * float(i) / float(stacks);
+		for (int j = 0; j <= slices; ++j) {
+			float theta = 2.0f * glm::pi<float>() * float(j) / float(slices);
+			float x = radius * sin(phi) * cos(theta);
+			float y = radius * sin(phi) * sin(theta);
+			float z = radius * cos(phi);
+			float u = float(j) / float(slices); // 纹理坐标
+			float v = float(i) / float(stacks);
+			// 顶点位置
+			vertices.push_back(x);
+			vertices.push_back(y);
+			vertices.push_back(z);
+			// 法线方向（单位球体）
+			vertices.push_back(x / radius);
+			vertices.push_back(y / radius);
+			vertices.push_back(z / radius);
+			// 纹理坐标
+			vertices.push_back(u);
+			vertices.push_back(v);
+		}
+	}
+	// 生成索引数据（两两三角形）
+	for (int i = 0; i < stacks; ++i) {
+		for (int j = 0; j < slices; ++j) {
+			int first = i * (slices + 1) + j;
+			int second = first + slices + 1;
+
+			indices.push_back(first);
+			indices.push_back(second);
+			indices.push_back(first + 1);
+
+			indices.push_back(second);
+			indices.push_back(second + 1);
+			indices.push_back(first + 1);
+		}
+	}
+
+	glGenVertexArrays(1, &VAO[3]);
+	glGenBuffers(1, &VBO[3]);
+	glGenBuffers(1, &EBO[2]);
+
+	glBindVertexArray(VAO[3]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[3]);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (char*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (char*)(6 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
@@ -326,6 +397,27 @@ void paintGL(void) {
 
 	glBindVertexArray(VAO[2]);
 	glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	// 4. 绘制球体
+	float timeValue = glfwGetTime(); // 获取运行时间
+	float angularSpeed = 1.0f;       // 角速度（弧度/秒）
+	float radius_sphere = 7.0f;             // 圆的半径
+	float theta_sphere = angularSpeed * timeValue; // 计算当前角度
+	// 计算新位置
+	float x_sphere = radius_sphere * cos(theta_sphere);
+	float z_sphere = radius_sphere * sin(theta_sphere);
+	modelTransformMatrix = glm::mat4(1.0f);
+	modelTransformMatrix = glm::scale(modelTransformMatrix,
+		glm::vec3(0.3f, 0.3f, 0.3f)); // 缩放
+	modelTransformMatrix = glm::translate(modelTransformMatrix, 
+		glm::vec3(x_sphere, 0.0f, z_sphere)); // 平移
+	modelTransformMatrix = glm::rotate(modelTransformMatrix,
+		theta_sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // 旋转
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+
+	glBindVertexArray(VAO[3]);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
